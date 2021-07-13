@@ -45,8 +45,4 @@ public class DotNetDateDeserializer implements JsonDeserializer<ZonedDateTime> {
     private boolean isStringTooShortToWork(JsonElement jsonElement) {
         return jsonElement.getAsString().length() - SLASH_DATE_LENGTH - CLOSE_BRACKET_SLASH_LENGTH <= 0;
     }
-
-//    private generateOffset(String dateString){
-//
-//    }
 }

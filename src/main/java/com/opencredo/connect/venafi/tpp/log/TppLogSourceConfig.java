@@ -2,6 +2,8 @@ package com.opencredo.connect.venafi.tpp.log;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +29,9 @@ public class TppLogSourceConfig extends AbstractConfig {
     public static final String POLL_INTERVAL = "venafi.poll.interval";
     private static final int POLL_INTERVAL_DEFAULT = 1000;
     private static final String POLL_INTERVAL_DOC = "Poll interval in milliseconds.";
+    private static final Logger log = LoggerFactory.getLogger(TppLogSourceConfig.class);
 
-    public static final int MAX_BATCH_SIZE = 10000;
+    public static final int MAX_BATCH_SIZE = 10_000;
     public static final int MIN_BATCH_SIZE = 2;
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(BASE_URL_CONFIG, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE, new NonEmptyStringWithoutControlChars(), ConfigDef.Importance.HIGH, BASE_URL_DOC)

@@ -50,7 +50,7 @@ public class TokenClient {
                 tokenValue = token.getAPIKey();
                 tokenExpiry = token.getValidUntil();
             } catch (FeignException e) {
-                log.error("Caught following exception swallowing to ensure connector doesn't explode", e);
+                log.error("Caught following exception, ignoring to ensure connector doesn't fail", e);
                 tokenValue = "";
                 tokenExpiry = ZonedDateTime.now();
                 return "";

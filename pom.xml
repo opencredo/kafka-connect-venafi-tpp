@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.opencredo</groupId>
     <artifactId>kafka-connect-venafi</artifactId>
-    <version>0.9.6-SNAPSHOT</version>
+    <version>20.4</version>
     <name>kafka-connect-venafi</name>
     <description>Kafka connector for Venafi Security Events</description>
 
@@ -24,7 +25,18 @@
         <connect.component.componentTypes>source</connect.component.componentTypes>
         <project.package.home>target/${project.artifactId}-${project.version}-package</project.package.home>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <docker.repo.user>opencredo</docker.repo.user>
+        <docker.image.name>venafi-kafka-connector</docker.image.name>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>ignored.repo</id>
+            <name>Ignored Repository</name>
+            <url>Ignored Repository</url>
+            <!--   mvn -Dmaven.deploy.skip=true deploy   -->
+        </repository>
+    </distributionManagement>
 
     <licenses>
         <license>
@@ -98,6 +110,12 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.15.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -114,6 +132,9 @@
                 <version>2.21.0</version>
                 <configuration>
                     <reportFormat>plain</reportFormat>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -127,6 +148,24 @@
                         <version>${junit-5.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>**/*IntegrationTest.java</include>
+                    </includes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -193,7 +232,7 @@
             <plugin>
                 <groupId>io.confluent</groupId>
                 <artifactId>kafka-connect-maven-plugin</artifactId>
-                <version>0.11.1</version>
+                <version>${kafka.connect.maven.plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -244,6 +283,71 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.5.3</version>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <!-- Remove existing image from local repo -->
+                    <execution>
+                        <id>docker-clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>docker</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>rmi</argument>
+                                <argument>-f</argument>
+                                <argument>${docker.repo.user}/${docker.image.name}:${project.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <!--
+                      Create new docker image using Dockerfile which must be present in current working directory.
+                      Tag the image using maven project version information.
+                    -->
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>docker</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>-f</argument>
+                                <argument>integration/Dockerfile</argument>
+                                <argument>-t</argument>
+                                <argument>${docker.repo.user}/${docker.image.name}:${project.version}</argument>
+                                <argument>.</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <!-- Push the image to a docker repo.
+                         mvn -Dmaven.deploy.skip=true deploy
+                         if you wish to deploy the docker image but not deploy the jars -->
+                    <execution>
+                        <id>docker-push</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>docker</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>push</argument>
+                                <argument>${docker.repo.user}/${docker.image.name}:${project.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

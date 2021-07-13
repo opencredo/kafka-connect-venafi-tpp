@@ -25,11 +25,9 @@ public class LogsClient {
                     .target(TppLog.class, baseUrl)
                     .getLogs(token, date, batchSize, offset);
         } catch (Exception e) {
-            log.error("Caught following exception swallowing to ensure connector doesn't explode", e);
+            log.error("Caught following exception, ignoring to ensure connector doesn't fail", e);
             return new LogResponse(new ArrayList<>());
         }
-
-
     }
 
     private static GsonDecoder logDecoder() {

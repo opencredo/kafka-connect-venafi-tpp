@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
@@ -52,7 +54,7 @@ class TppLogSourceConnectorTest {
     }
 
     @Test
-    void as_a_connector_I_should_be_able_to_start_up_with_some_properties() throws IllegalAccessException, InstantiationException, InterruptedException {
+    void as_a_connector_I_should_be_able_to_start_up_with_some_properties() throws IllegalAccessException, InstantiationException, InterruptedException, NoSuchMethodException, InvocationTargetException {
         given_the_mock_will_respond_to_auth();
         given_the_mock_will_respond_to_log();
 
@@ -69,7 +71,7 @@ class TppLogSourceConnectorTest {
     }
 
     @Test
-    void as_a_connector_I_should_only_return_one_config_even_if_more_are_provided() throws IllegalAccessException, InstantiationException {
+    void as_a_connector_I_should_only_return_one_config_even_if_more_are_provided() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         TppLogSourceConnector source = given_a_source();
         when_the_source_is_started_with_minimum_properties(source);
         SourceTask sourceTask = then_I_should_be_able_to_get_a_source_task_from_the_connector(source);
@@ -119,8 +121,9 @@ class TppLogSourceConnectorTest {
         return connector.taskConfigs(maxTasks);
     }
 
-    private SourceTask then_I_should_be_able_to_get_a_source_task_from_the_connector(TppLogSourceConnector connector) throws InstantiationException, IllegalAccessException {
-        Task task = connector.taskClass().newInstance();
+    private SourceTask then_I_should_be_able_to_get_a_source_task_from_the_connector(TppLogSourceConnector connector) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        final Constructor<? extends Task> noParamConstructor = connector.taskClass().getConstructor();
+        final Task task = noParamConstructor.newInstance();
         assertTrue(task instanceof SourceTask);
         return (SourceTask) task;
     }
